@@ -1,0 +1,26 @@
+[
+    {
+        "name": "Tom",
+        "householdName": "T&J"
+    },
+    {
+        "name": "Jerry",
+        "householdName": "T&J"
+    },
+    {
+        "name": "Cat",
+        "householdName": "CatDog"
+    },
+    {
+        "name": "Dog",
+        "householdName": "CatDog"
+    },
+    {
+        "name": "Beavis",
+        "householdName": "Cornholio"
+    },
+    {
+        "name": "Butthead",
+        "householdName": "Cornholio"
+    }
+]

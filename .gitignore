@@ -1,0 +1,6 @@
+*.iml
+.idea/
+.gradle/
+build/
+src/test/resources/real_people.json
+
