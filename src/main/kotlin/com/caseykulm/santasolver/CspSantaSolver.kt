@@ -10,9 +10,15 @@ import java.util.concurrent.TimeUnit
 
 class CspSantaSolver : SantaSolver {
     private val model = Model("Choco Solver CSP Santa Solver")
+    private val personToIntVarMap: MutableMap<Person, IntVar> = mutableMapOf()
+    private val personToModelIndexMap: MutableMap<Person, Int> = mutableMapOf()
 
-    override fun solve(people: Set<Person>): List<Solution> {
+    override fun solve(
+        people: Set<Person>,
+        gifterGifteeConstraints: Map<Person, Person>
+    ): List<Solution> {
         val peopleSortedSet: SortedSet<Person> = people.toSortedSet { o1, o2 -> o1.name.compareTo(o2.name) }
+        peopleSortedSet.forEachIndexed { index, person -> personToModelIndexMap[person] = index }
         val householdToPeopleIndexMap = peopleSortedSet.groupBy(
             keySelector = { it.householdName },
             valueTransform = { peopleSortedSet.indexOf(it) },
@@ -31,7 +37,12 @@ class CspSantaSolver : SantaSolver {
             householdToPeopleIndexSetVarMap,
         )
 
-        initChocoSolverConstraints(peopleSortedSet, gifteeIntVars, householdToPeopleIndexSetVarMap)
+        initChocoSolverConstraints(
+            peopleSortedSet,
+            gifteeIntVars,
+            householdToPeopleIndexSetVarMap,
+            gifterGifteeConstraints,
+        )
 
         val chocoSolverSolutions = model.solver.findAllSolutions(
             TimeCounter(model, TimeUnit.MINUTES.toNanos(5)),
@@ -49,7 +60,8 @@ class CspSantaSolver : SantaSolver {
     private fun initChocoSolverConstraints(
         peopleSortedSet: SortedSet<Person>,
         gifteeIntVars: MutableList<IntVar>,
-        householdToPeopleIndexSetVarMap: MutableMap<String, SetVar>
+        householdToPeopleIndexSetVarMap: MutableMap<String, SetVar>,
+        gifterGifteeConstraints: Map<Person, Person>,
     ) {
         peopleSortedSet.forEachIndexed { index, person ->
             // A person cannot be assigned to themselves
@@ -59,11 +71,17 @@ class CspSantaSolver : SantaSolver {
             // A person cannot be assigned to someone in their household
             val householdPeopleSetVar: SetVar = householdToPeopleIndexSetVarMap[person.householdName]!!
             model.notMember(gifteeIntVars[index], householdPeopleSetVar).post()
-
         }
 
         // Every person can only be a giftee once
         model.allDifferent(*gifteeIntVars.toTypedArray()).post()
+
+        gifterGifteeConstraints.forEach { (gifter, giftee) ->
+            val gifterIntVar = personToIntVarMap[gifter]
+            val gifteeModelIndex = personToModelIndexMap[giftee]
+            println("Giving gifter: $gifter ($gifterIntVar), giftee: $giftee ($gifteeModelIndex)")
+            model.arithm(gifterIntVar, "=", gifteeModelIndex!!).post()
+        }
 
         // TODO: 2 people having each other can be boring. Probably make this a configuration option
     }
@@ -90,7 +108,13 @@ class CspSantaSolver : SantaSolver {
         peopleSortedSet: SortedSet<Person>,
         gifteeIntVars: MutableList<IntVar>,
         uniqueNameCount: Int
-    ) = peopleSortedSet.forEach { gifteeIntVars.add(model.intVar(it.name, 0, uniqueNameCount - 1)) }
+    ) = peopleSortedSet.forEach { person ->
+        // Generate IntVar from Person
+        val gifteeIntVar = model.intVar(person.name, 0, uniqueNameCount - 1)
+
+        gifteeIntVars.add(gifteeIntVar)
+        personToIntVarMap[person] = gifteeIntVar
+    }
 
     private fun mapChocoSolverSolutionToDomainSolution(
         chocoSolverSolution: ChocoSolverSolution,
@@ -103,6 +127,7 @@ class CspSantaSolver : SantaSolver {
                 val giftee: Person = peopleSortedSet.elementAt(gifteeIndex)
                 Pair(person, giftee)
             }.toMap()
+                .toSortedMap { o1, o2 -> o1.name.compareTo(o2.name) }
         )
     }
 }

@@ -5,6 +5,7 @@ import kotlinx.serialization.json.Json
 import kotlin.random.Random
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlin.test.assertTrue
 
 internal class CspSantaSolverTest {
     private lateinit var testPeople: Set<Person>
@@ -34,14 +35,20 @@ internal class CspSantaSolverTest {
         val realPeopleJsonStr: String = javaClass.getResource("/real_people.json")!!.readText()
         val realPeople: Set<Person> = Json.decodeFromString(realPeopleJsonStr)
 
-        val actualSolutions = subj.solve(realPeople)
+        val actualSolutions = subj.solve(
+            people = realPeople,
+//            gifterGifteeConstraints = mapOf(
+//                Person("Hannah", "Vegas") to Person("Lora", "Denver")
+//            )
+        )
 
         printRandomSolution(actualSolutions)
     }
 
     private fun printRandomSolution(actualSolutions: List<Solution>) {
+        assertTrue("ERROR: No solutions found") {actualSolutions.isNotEmpty()}
         val randomSolutionIndex = Random.nextInt(until = actualSolutions.size)
-        println("Randomly chosen solution is #$randomSolutionIndex")
+        println("Randomly chosen solution is #$randomSolutionIndex out of ${actualSolutions.size} possible solutions")
         println("=================")
         println(actualSolutions[randomSolutionIndex].prettyAllGifterGifteeAnswers)
     }

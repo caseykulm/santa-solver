@@ -6,7 +6,11 @@ data class Solution(
 
 fun Solution.gifteeFrom(gifter: Person) = gifterToGifteeMap[gifter]
 
-fun Solution.prettyGifteeFrom(gifter: Person): String = "Gifter ${gifter.name} is assigned to Giftee ${gifterToGifteeMap[gifter]!!.name}"
+fun Solution.prettyGifteeFrom(gifter: Person): String = String.format(
+    "%6s is getting a gift for %-6s",
+    gifter.name,
+    gifterToGifteeMap[gifter]!!.name
+)
 
 val Solution.prettyAllGifterGifteeAnswers get() = gifterToGifteeMap.keys
     .map { prettyGifteeFrom(it) }
